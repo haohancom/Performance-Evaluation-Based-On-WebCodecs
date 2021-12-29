@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Performance-Evaluation-Based-On-WebCodecs</title>
+</head>
+<textarea style="width: 640px; height: 270px"></textarea>
+<canvas width="1920" height="1080"></canvas>
+<script>
+    function log(str) {
+        document.querySelector('textarea').value += str + '\n';
+    }
+
+    const canvas = document.querySelector('canvas');
+    const canvasContext = canvas.getContext('2d');
+    var imageData = canvasContext.createImageData(1920, 1080);   /// create a canvas buffer (RGBA)
+    var data = imageData.data;
+    for(var i = 0; i <=8294400; i++) {
+        data[i] = Math.floor(Math.random()*255 +1);
+    }
+    canvasContext.putImageData(imageData, 0, 0);
+</script>
+</html>
