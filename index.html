@@ -13,12 +13,33 @@
     const canvasContext = canvas.getContext('2d');
     var imageData = canvasContext.createImageData(w, h);   /// create a canvas buffer (RGBA)
     var data = imageData.data;
+    var frame_counter = 0;
+    let codec_string = "vp09.00.10.08";
+    let frame_number = 100;
+    let time_delay = 0;
+
+    const init = {
+        output: (chunk) => {
+            // todo : save chunk to local file
+        },
+        error: (e) => {
+            log(e.message);
+        }
+    };
+    const config = {
+        codec: codec_string,
+        width: w,
+        height: h,
+        bitrate: 10e6,
+    };
+    let encoder = new VideoEncoder(init);
+    encoder.configure(config);
 
     drawWithInterval();
 
     async function drawWithInterval() {
-        for (let i= 0; i< 100; ++i) {
-            await draw(1000);
+        for (let i= 0; i< frame_number; ++i) {
+            await draw(time_delay);
         }
     }
 
@@ -28,6 +49,23 @@
                 for(let i = 0; i <=w * h * 4; ++i) {
                     data[i] = Math.floor(Math.random()*255 +1);
                 }
+
+                const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
+
+                let frame = new VideoFrame(data, init);
+                frame_counter++;
+                const insert_keyframe = (frame_counter % 150) === 0;
+
+                let t0 = performance.now()
+                encoder.encode(frame, { keyFrame: insert_keyframe });
+                let t1 = performance.now()
+                log("encode time : " + (t1 - t0));
+                frame.close();
+                if (frame_counter === frame_number) {
+                    encoder.close();
+                    log("done");
+                }
+
                 canvasContext.putImageData(imageData, 0, 0);
                 resolve();
             }, delay);
