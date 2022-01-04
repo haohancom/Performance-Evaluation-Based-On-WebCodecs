@@ -39,7 +39,6 @@
     }
 
     function RGB2YUV(width, height, rgbaArray){
-        var ptr = module._malloc(options.width * options.height * 3/2);
         var output = new Uint8Array(module.HEAPU8.buffer, ptr, options.width * options.height * 3/2);
 
         var uOffset = width * height;
@@ -58,7 +57,7 @@
                 }
             }
         }
-        return ptr;
+        return output;
     }
 </script>
 </html>
