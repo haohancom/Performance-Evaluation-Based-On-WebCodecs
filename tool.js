@@ -1,5 +1,17 @@
 'use strict';
 
+let w = 1920;
+let h = 1080;
+let frame_counter = 0;
+let frame_number = 100;
+const canvas = document.querySelector('canvas');
+const canvasContext = canvas.getContext('2d');
+let imageData = canvasContext.createImageData(w, h);   /// create a canvas buffer (RGBA)
+let data = imageData.data;
+let time_delay = 0;
+let codec_string = "vp09.00.10.08";
+var encoder;
+
 async function drawWithInterval() {
     for (let i= 0; i< frame_number; ++i) {
         await draw(time_delay);
@@ -33,6 +45,29 @@ function draw(delay) {
             resolve();
         }, delay);
     });
+}
+
+function log(str) {
+    document.querySelector('textarea').value += str + '\n';
+}
+
+function initEncoder() {
+    const init = {
+        output: (chunk) => {
+            // todo : save chunk to local file
+        },
+        error: (e) => {
+            log(e.message);
+        }
+    };
+    const config = {
+        codec: codec_string,
+        width: w,
+        height: h,
+        bitrate: 10e6,
+    };
+    encoder = new VideoEncoder(init);
+    encoder.configure(config);
 }
 
 function RGB2YUV(width, height, rgbaArray){

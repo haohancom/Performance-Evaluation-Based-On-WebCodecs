@@ -5,3 +5,4 @@
 - [ ] Used the WebCodecs API to encode these generated YUV images (with configured bitrate & frame rate)
 - [ ] Record the average encode cost time 
 - [ ] Return a boolean value if the average encode cost time less or more than max threshold .
+- [ ] Add the following variables: {bitrate, frame rate, key frame number, frame difference}
