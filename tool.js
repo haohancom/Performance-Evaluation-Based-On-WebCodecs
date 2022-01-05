@@ -50,9 +50,7 @@ function log(str) {
 
 function initEncoder() {
     const init = {
-        output: (chunk) => {
-            // todo : save chunk to local file
-        },
+        output: () => {}, // do nothing
         error: (e) => {
             log(e.message);
         }
