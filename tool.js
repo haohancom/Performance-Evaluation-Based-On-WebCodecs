@@ -29,7 +29,7 @@ function draw(delay) {
 
             let frame = new VideoFrame(data, init);
             frame_counter++;
-            const insert_keyframe = (frame_counter % 150) === 0;
+            const insert_keyframe = (frame_counter % 10) === 0;
 
             let t0 = performance.now();
             encoder.encode(frame, {keyFrame: insert_keyframe});
@@ -64,7 +64,8 @@ function initEncoder() {
         codec: codec_string,
         width: w,
         height: h,
-        bitrate: 10e6,
+        bitrate: 12_000_000,
+        framerate: 60,
     };
     encoder = new VideoEncoder(init);
     encoder.configure(config);
