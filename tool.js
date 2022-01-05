@@ -18,34 +18,31 @@ async function drawWithInterval() {
     }
 }
 
-function draw(delay) {
-    return new Promise(function (resolve, reject) {
-        setTimeout(function () {
-            for (let i = 0; i <= w * h * 4; ++i) {
-                data[i] = Math.floor(Math.random() * 255 + 1);
-            }
+async function draw(delay) {
+    setTimeout(function () {
+        for (let i = 0; i <= w * h * 4; ++i) {
+            data[i] = Math.floor(Math.random() * 255 + 1);
+        }
 
-            const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
+        const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
 
-            let frame = new VideoFrame(data, init);
-            frame_counter++;
-            const insert_keyframe = (frame_counter % 10) === 0;
+        let frame = new VideoFrame(data, init);
+        frame_counter++;
+        const insert_keyframe = (frame_counter % 10) === 0;
 
-            let t0 = performance.now();
-            encoder.encode(frame, {keyFrame: insert_keyframe});
-            let t1 = performance.now();
-            log("encode time : " + (t1 - t0));
-            frame.close();
-            if (frame_counter === frame_number) {
-                encoder.close();
-                log("done");
-            }
+        let t0 = performance.now();
+        encoder.encode(frame, {keyFrame: insert_keyframe});
+        let t1 = performance.now();
+        log("encode time : " + (t1 - t0));
+        frame.close();
+        if (frame_counter === frame_number) {
+            encoder.close();
+            log("done");
+        }
 
-            canvasContext.putImageData(imageData, 0, 0);
-            resolve();
-        }, delay);
-    });
-}
+        canvasContext.putImageData(imageData, 0, 0);
+    }, delay);
+};
 
 function log(str) {
     document.querySelector('textarea').value += str + '\n';
