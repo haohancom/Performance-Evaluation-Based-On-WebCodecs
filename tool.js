@@ -4,8 +4,6 @@ let w = 1920;
 let h = 1080;
 let frame_counter = 0;
 let frame_number = 100;
-const canvas = document.querySelector('canvas');
-const canvasContext = canvas.getContext('2d');
 let dataList = [];
 
 let codec_string = "vp09.00.10.08";
