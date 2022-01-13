@@ -20,6 +20,7 @@ async function drawWithInterval() {
     }
     let t1 = performance.now();
     log("total time : " + (t1 - t0));
+    log("avg time : " + ((t1 - t0) / frame_number))
 }
 
 async function draw(index) {
@@ -61,7 +62,6 @@ function prepareData() {
             // a
             data[j * 4 + 3] = 255;
         }
-        // dataList.push(data);
         dataList[i] = data;
     }
 }
