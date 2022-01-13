@@ -8,41 +8,61 @@ const canvas = document.querySelector('canvas');
 const canvasContext = canvas.getContext('2d');
 let imageData = canvasContext.createImageData(w, h);   /// create a canvas buffer (RGBA)
 let data = imageData.data;
-let time_delay = 0;
 let codec_string = "vp09.00.10.08";
 var encoder;
 
 async function drawWithInterval() {
+    let t0 = performance.now();
+
     for (let i= 0; i< frame_number; ++i) {
-        await draw(time_delay);
+       draw();
     }
+    let t1 = performance.now();
+    log("total time : " + (t1 - t0));
 }
 
-async function draw(delay) {
-    setTimeout(function () {
-        for (let i = 0; i <= w * h * 4; ++i) {
-            data[i] = Math.floor(Math.random() * 255 + 1);
-        }
+async function draw() {
+    // todo : split prepare from draw
+    prepareData();
 
-        const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
+    const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
 
-        let frame = new VideoFrame(data, init);
-        frame_counter++;
-        const insert_keyframe = (frame_counter % 10) === 0;
+    let frame = new VideoFrame(data, init);
+    frame_counter++;
+    const insert_keyframe = (frame_counter % 10) === 0;
 
-        let t0 = performance.now();
-        encoder.encode(frame, {keyFrame: insert_keyframe});
-        let t1 = performance.now();
-        log("encode time : " + (t1 - t0));
-        frame.close();
-        if (frame_counter === frame_number) {
-            encoder.close();
-            log("done");
-        }
+    let t0 = performance.now();
+    encoder.encode(frame, {keyFrame: insert_keyframe});
+    let t1 = performance.now();
+    log("encode time : " + (t1 - t0));
+    frame.close();
+    if (frame_counter === frame_number) {
+        encoder.close();
+        log("done");
+    }
 
-        canvasContext.putImageData(imageData, 0, 0);
-    }, delay);
-};
+    // canvasContext.putImageData(imageData, 0, 0);
+}
+
+function prepareData() {
+    for (let i = 0; i <= w * h; ++i) {
+        let random = Math.floor(Math.random() * 16777215 + 1);
+
+        // r
+        data[i * 4] = random & 255;
+
+        // g
+        random = random >> 8;
+        data[i * 4 + 1] = random & 255;
+
+        // b
+        random = random >> 8;
+        data[i * 4 + 2] = random;
+
+        // a
+        data[i * 4 + 3] = 255;
+    }
+}
 
 function log(str) {
     document.querySelector('textarea').value += str + '\n';
