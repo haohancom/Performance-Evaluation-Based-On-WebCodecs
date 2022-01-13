@@ -7,6 +7,8 @@ let frame_number = 100;
 let dataList = [];
 
 let codec_string = "vp09.00.10.08";
+let bit_rate = 12_000_000;
+let frame_rate = 60;
 var encoder;
 
 async function drawWithInterval() {
@@ -79,8 +81,8 @@ function initEncoder() {
         codec: codec_string,
         width: w,
         height: h,
-        bitrate: 12_000_000,
-        framerate: 60,
+        bitrate: bit_rate,
+        framerate: frame_rate,
     };
     encoder = new VideoEncoder(init);
     encoder.configure(config);
