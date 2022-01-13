@@ -6,28 +6,27 @@ let frame_counter = 0;
 let frame_number = 100;
 const canvas = document.querySelector('canvas');
 const canvasContext = canvas.getContext('2d');
-let imageData = canvasContext.createImageData(w, h);   /// create a canvas buffer (RGBA)
-let data = imageData.data;
+let dataList = [];
+
 let codec_string = "vp09.00.10.08";
 var encoder;
 
 async function drawWithInterval() {
+    prepareData();
     let t0 = performance.now();
 
     for (let i= 0; i< frame_number; ++i) {
-       draw();
+       draw(i);
     }
     let t1 = performance.now();
     log("total time : " + (t1 - t0));
 }
 
-async function draw() {
-    // todo : split prepare from draw
-    prepareData();
+async function draw(index) {
 
     const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
 
-    let frame = new VideoFrame(data, init);
+    let frame = new VideoFrame(dataList[index], init);
     frame_counter++;
     const insert_keyframe = (frame_counter % 10) === 0;
 
@@ -40,27 +39,30 @@ async function draw() {
         encoder.close();
         log("done");
     }
-
-    // canvasContext.putImageData(imageData, 0, 0);
 }
 
 function prepareData() {
-    for (let i = 0; i <= w * h; ++i) {
-        let random = Math.floor(Math.random() * 16777215 + 1);
+    for (let i = 0; i < frame_number; ++i) {
+        let data=  new Uint8Array(w * h * 4);
+        for (let j = 0; j <= w * h; ++j) {
+            let random = Math.floor(Math.random() * 16777215 + 1);
 
-        // r
-        data[i * 4] = random & 255;
+            // r
+            data[j * 4] = random & 255;
 
-        // g
-        random = random >> 8;
-        data[i * 4 + 1] = random & 255;
+            // g
+            random = random >> 8;
+            data[j * 4 + 1] = random & 255;
 
-        // b
-        random = random >> 8;
-        data[i * 4 + 2] = random;
+            // b
+            random = random >> 8;
+            data[j * 4 + 2] = random;
 
-        // a
-        data[i * 4 + 3] = 255;
+            // a
+            data[j * 4 + 3] = 255;
+        }
+        // dataList.push(data);
+        dataList[i] = data;
     }
 }
 
@@ -84,26 +86,4 @@ function initEncoder() {
     };
     encoder = new VideoEncoder(init);
     encoder.configure(config);
-}
-
-function RGB2YUV(width, height, rgbaArray){
-    var output = new Uint8Array(module.HEAPU8.buffer, ptr, options.width * options.height * 3/2);
-
-    var uOffset = width * height;
-    var vOffset = uOffset + (uOffset >> 2);
-    for (var i = 0; i < height; i++) {
-        for (var j = 0; j < width; j++) {
-            var sampleIndex = ((i >> 1 << 1) * width ) +  (j >> 1 << 1);
-            var UVIndex =  ((i >> 1) * (width >> 1)) +  (j >> 1);
-            var r = rgbaArray[4*(i*width + j)];
-            var g = rgbaArray[4*(i*width + j) + 1];
-            var b = rgbaArray[4*(i*width + j) + 2];
-            output[i*width + j] = ((66 * r + 129 * g + 25 * b) >> 8) + 16;
-            if(sampleIndex === i*width + j){
-                output[uOffset +UVIndex] =  ((-38 * r + -74 * g + 112 * b) >> 8) + 128;
-                output[vOffset + UVIndex] = ((112 * r + -94 * g + -18 * b) >> 8) + 128;
-            }
-        }
-    }
-    return output;
 }
