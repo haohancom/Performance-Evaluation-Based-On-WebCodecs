@@ -18,7 +18,7 @@ self.addEventListener('message', function (e) {
         case 'start':
             self.postMessage('WORKER STARTED: ' + data.msg);
             initEncoder();
-            drawWithInterval().then(() => {self.postMessage('WORKER DONE')});
+            process().then(() => {self.postMessage('WORKER DONE')});
             break;
         case 'stop':
             self.postMessage('WORKER STOPPED');
@@ -29,12 +29,12 @@ self.addEventListener('message', function (e) {
     };
 }, false);
 
-async function drawWithInterval() {
+async function process() {
     prepareData();
 
     let t0 = performance.now();
     for (let i= 0; i< frame_number; ++i) {
-       await draw(i);
+       await encode(i);
     }
     let t1 = performance.now();
     let total_time = t1 - t0;
@@ -48,7 +48,7 @@ async function drawWithInterval() {
     }
 }
 
-async function draw(index) {
+async function encode(index) {
 
     const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
 
