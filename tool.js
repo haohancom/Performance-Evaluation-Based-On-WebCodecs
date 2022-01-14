@@ -6,11 +6,21 @@ let frame_counter = 0;
 let frame_number = 100;
 let dataList = [];
 
-let codec_string = "vp09.00.10.08";
+let codec_string = "avc1.42E01F";
 let bit_rate = 12_000_000; // 12 Mbps
 let frame_rate = 60;
 let threshold = 10;
 var encoder;
+var decoder;
+const chunks = [];
+const config = {
+    codec: codec_string, //H264: 42e01f
+    width: w,
+    height: h,
+    bitrate: bit_rate, // 2 Mbps
+    framerate: frame_rate,
+};
+
 
 self.addEventListener('message', function (e) {
     let data = e.data;
@@ -18,7 +28,9 @@ self.addEventListener('message', function (e) {
         case 'start':
             self.postMessage('WORKER STARTED: ' + data.msg);
             initEncoder();
-            process().then(() => {self.postMessage('WORKER DONE')});
+            initDecoder();
+            process()
+                .then(() => {self.postMessage('WORKER DONE')});
             break;
         case 'stop':
             self.postMessage('WORKER STOPPED');
@@ -31,20 +43,45 @@ self.addEventListener('message', function (e) {
 
 async function process() {
     prepareData();
+    await encodeProcess();
+    await decodeProcess();
+}
 
+async function encodeProcess() {
     let t0 = performance.now();
-    for (let i= 0; i< frame_number; ++i) {
-       await encode(i);
+    for (let i = 0; i < frame_number; ++i) {
+        await encode(i);
     }
     let t1 = performance.now();
     let total_time = t1 - t0;
     let avg_time = total_time / frame_number;
-    postMessage("total time : " + total_time);
-    postMessage("avg time : " + avg_time);
+    postMessage("total encode time : " + total_time);
+    postMessage("avg encode time : " + avg_time);
     if (avg_time > threshold) {
-        postMessage('TAT');
+        postMessage('encode result : TAT');
     } else {
-        postMessage('^_^');
+        postMessage('encode result : ^_^');
+    }
+}
+
+
+async function decodeProcess() {
+    let t0 = performance.now();
+    for (var chunk of chunks) {
+        // decoder.decode(chunks);
+        await new Promise( () => {
+            decoder.decode(chunks);
+        })
+    }
+    let t1 = performance.now();
+    let total_time = t1 - t0;
+    let avg_time = total_time / frame_number;
+    postMessage("total decode time : " + total_time);
+    postMessage("avg decode time : " + avg_time);
+    if (avg_time > threshold) {
+        postMessage('decode result : TAT');
+    } else {
+        postMessage('decode result : ^_^');
     }
 }
 
@@ -91,20 +128,38 @@ function prepareData() {
     }
 }
 
-function initEncoder() {
+function initDecoder() {
     const init = {
-        output: () => {}, // do nothing
+        output: () => {},
         error: (e) => {
             postMessage(e.message);
         }
     };
-    const config = {
-        codec: codec_string,
-        width: w,
-        height: h,
-        bitrate: bit_rate,
-        framerate: frame_rate,
+
+    decoder = new VideoDecoder(init);
+    decoder.configure(config);
+}
+
+function initEncoder() {
+    const init = {
+        // todo : output doesn't work
+        output: (chunk) => {
+            const buffer = new ArrayBuffer(chunk.byteLength)
+            chunk.copyTo(buffer);
+            let chunkObj = new EncodedVideoChunk({
+                timestamp: chunk.timestamp,
+                duration: chunk.duration,
+                type: chunk.type,
+                data: buffer,
+            });
+
+            chunks.push(chunkObj);
+        },
+        error: (e) => {
+            postMessage(e.message);
+        }
     };
+
     encoder = new VideoEncoder(init);
     encoder.configure(config);
 }
