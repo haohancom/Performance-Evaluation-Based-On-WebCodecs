@@ -7,7 +7,23 @@
 <textarea style="width: 640px; height: 270px"></textarea>
 <script type="text/javascript" src="tool.js"></script>
 <script>
-    initEncoder();
-    drawWithInterval();
+    let worker = new Worker('tool.js');
+    worker.postMessage({cmd: 'start', msg: ['start msg']});
+
+    worker.onmessage = function (event) {
+        log('Received message : ' + event.data);
+        if ('WORKER DONE' === event.data) {
+            stop();
+        }
+    }
+
+    function stop() {
+        log("stop thread");
+        worker.postMessage({cmd: 'stop', msg: ['please stop']});
+    }
+
+    function log(s) {
+        document.querySelector('textarea').value += (s + '\n');
+    }
 </script>
 </html>

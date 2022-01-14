@@ -11,16 +11,33 @@ let bit_rate = 12_000_000;
 let frame_rate = 60;
 var encoder;
 
+self.addEventListener('message', function (e) {
+    let data = e.data;
+    switch (data.cmd) {
+        case 'start':
+            self.postMessage('WORKER STARTED: ' + data.msg);
+            initEncoder();
+            drawWithInterval().then(() => {self.postMessage('WORKER DONE')});
+            break;
+        case 'stop':
+            self.postMessage('WORKER STOPPED');
+            self.close(); // Terminates the worker.
+            break;
+        default:
+            self.postMessage('Unknown command: ' + data.msg);
+    };
+}, false);
+
 async function drawWithInterval() {
     prepareData();
-    let t0 = performance.now();
 
+    let t0 = performance.now();
     for (let i= 0; i< frame_number; ++i) {
-       draw(i);
+       await draw(i);
     }
     let t1 = performance.now();
-    log("total time : " + (t1 - t0));
-    log("avg time : " + ((t1 - t0) / frame_number))
+    postMessage("total time : " + (t1 - t0));
+    postMessage("avg time : " + ((t1 - t0) / frame_number))
 }
 
 async function draw(index) {
@@ -34,11 +51,11 @@ async function draw(index) {
     let t0 = performance.now();
     encoder.encode(frame, {keyFrame: insert_keyframe});
     let t1 = performance.now();
-    log("encode time : " + (t1 - t0));
+    postMessage("encode time : " + (t1 - t0));
     frame.close();
     if (frame_counter === frame_number) {
         encoder.close();
-        log("done");
+        postMessage("done");
     }
 }
 
@@ -66,15 +83,11 @@ function prepareData() {
     }
 }
 
-function log(str) {
-    document.querySelector('textarea').value += str + '\n';
-}
-
 function initEncoder() {
     const init = {
         output: () => {}, // do nothing
         error: (e) => {
-            log(e.message);
+            postMessage(e.message);
         }
     };
     const config = {
