@@ -7,3 +7,4 @@
 - [ ] Return a boolean value if the average encode cost time less or more than max threshold .
 - [x] Add the following variables: {bitrate, frame rate, key frame number}
 - [x] Involve webworker
+- [ ] Use a shuffle algorithm to generate frames - decrease time
