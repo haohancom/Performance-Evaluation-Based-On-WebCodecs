@@ -7,7 +7,7 @@ let frame_number = 100;
 let dataList = [];
 
 let codec_string = "vp09.00.10.08";
-let bit_rate = 12_000_000;
+let bit_rate = 12_000_000; // 12 Mbps
 let frame_rate = 60;
 let threshold = 10;
 var encoder;
