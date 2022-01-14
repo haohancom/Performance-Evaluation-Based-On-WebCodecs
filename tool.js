@@ -9,6 +9,7 @@ let dataList = [];
 let codec_string = "vp09.00.10.08";
 let bit_rate = 12_000_000;
 let frame_rate = 60;
+let threshold = 10;
 var encoder;
 
 self.addEventListener('message', function (e) {
@@ -36,8 +37,15 @@ async function drawWithInterval() {
        await draw(i);
     }
     let t1 = performance.now();
-    postMessage("total time : " + (t1 - t0));
-    postMessage("avg time : " + ((t1 - t0) / frame_number))
+    let total_time = t1 - t0;
+    let avg_time = total_time / frame_number;
+    postMessage("total time : " + total_time);
+    postMessage("avg time : " + avg_time);
+    if (avg_time > threshold) {
+        postMessage('TAT');
+    } else {
+        postMessage('^_^');
+    }
 }
 
 async function draw(index) {
