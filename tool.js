@@ -62,22 +62,39 @@ async function encodeProcess() {
     } else {
         postMessage('encode result : ^_^');
     }
+    console.log("encode is done")
 }
 
 
 async function decodeProcess() {
+    console.log("decode is starting")
     let t0 = performance.now();
-    for (var chunk of chunks) {
-        // decoder.decode(chunks);
-        await new Promise( () => {
-            decoder.decode(chunks);
-        })
+    let keyFrameCount = 0;
+    console.log("chunks size :" + chunks.length);
+    for (const chunk of chunks) {
+        console.log("handle chunk ...");
+        if ("key" === chunk.type) ++keyFrameCount;
+        if (0 === keyFrameCount) {
+            console.log("continue");
+            continue;
+        }
+        // await new Promise( () => {
+        console.log(chunk.toString());
+        decoder.decode(chunk);
+        // })
     }
+    console.log("decode is about to flush");
+    await decoder.flush();
+    // decoder.close();
+
     let t1 = performance.now();
     let total_time = t1 - t0;
     let avg_time = total_time / frame_number;
     postMessage("total decode time : " + total_time);
+    postMessage("chunks size : " + chunks.length);
     postMessage("avg decode time : " + avg_time);
+
+
     if (avg_time > threshold) {
         postMessage('decode result : TAT');
     } else {
@@ -87,7 +104,7 @@ async function decodeProcess() {
 
 async function encode(index) {
 
-    const init = {timestamp: 0, codedWidth: w, codedHeight: h, format: 'RGBA'};
+    const init = {timestamp: performance.now(), codedWidth: w, codedHeight: h, format: 'RGBA'};
 
     let frame = new VideoFrame(dataList[index], init);
     frame_counter++;
@@ -99,6 +116,7 @@ async function encode(index) {
     postMessage("encode time : " + (t1 - t0));
     frame.close();
     if (frame_counter === frame_number) {
+        await encoder.flush();
         encoder.close();
         postMessage("done");
     }
@@ -128,23 +146,12 @@ function prepareData() {
     }
 }
 
-function initDecoder() {
-    const init = {
-        output: () => {},
-        error: (e) => {
-            postMessage(e.message);
-        }
-    };
-
-    decoder = new VideoDecoder(init);
-    decoder.configure(config);
-}
 
 function initEncoder() {
     const init = {
-        // todo : output doesn't work
         output: (chunk) => {
-            const buffer = new ArrayBuffer(chunk.byteLength)
+            console.log("encode chunk");
+            const buffer = new Uint8Array(chunk.byteLength);
             chunk.copyTo(buffer);
             let chunkObj = new EncodedVideoChunk({
                 timestamp: chunk.timestamp,
@@ -162,4 +169,18 @@ function initEncoder() {
 
     encoder = new VideoEncoder(init);
     encoder.configure(config);
+}
+
+function initDecoder() {
+    const init = {
+        output: (frame) => {
+            console.log("decode frame");
+        },
+        error: (e) => {
+            postMessage(e.message);
+        }
+    };
+
+    decoder = new VideoDecoder(init);
+    decoder.configure(config);
 }
