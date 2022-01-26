@@ -6,7 +6,8 @@ let frame_counter = 0;
 let frame_number = 100;
 let dataList = [];
 
-let codec_string = "avc1.42E01F";
+// let codec_string = "avc1.42E01F";
+let codec_string = "vp8";
 let bit_rate = 12_000_000; // 12 Mbps
 let frame_rate = 60;
 let threshold = 10;
@@ -44,15 +45,25 @@ self.addEventListener('message', function (e) {
 async function process() {
     prepareData();
     await encodeProcess();
+    console.log("-=-=-=-=-=")
+    console.log("length :" + chunks.length)
+    // await encoder.flush().then(() => console.log("flushed !"));
+    console.log("length :" + chunks.length)
+    console.log("-=-=-=-=-=")
+    console.log("ready to close");
+    encoder.close();
+    postMessage("done");
     await decodeProcess();
 }
 
 async function encodeProcess() {
     let t0 = performance.now();
     for (let i = 0; i < frame_number; ++i) {
-        await encode(i);
+        encode(i);
+        await encoder.flush();
     }
     let t1 = performance.now();
+
     let total_time = t1 - t0;
     let avg_time = total_time / frame_number;
     postMessage("total encode time : " + total_time);
@@ -72,19 +83,15 @@ async function decodeProcess() {
     let keyFrameCount = 0;
     console.log("chunks size :" + chunks.length);
     for (const chunk of chunks) {
-        console.log("handle chunk ...");
         if ("key" === chunk.type) ++keyFrameCount;
         if (0 === keyFrameCount) {
             console.log("continue");
             continue;
         }
-        // await new Promise( () => {
-        console.log(chunk.toString());
-        decoder.decode(chunk);
-        // })
+        await decoder.decode(chunk);
     }
-    console.log("decode is about to flush");
     await decoder.flush();
+    console.log("decode is flushed");
     // decoder.close();
 
     let t1 = performance.now();
@@ -102,24 +109,18 @@ async function decodeProcess() {
     }
 }
 
-async function encode(index) {
-
+function encode(index) {
     const init = {timestamp: performance.now(), codedWidth: w, codedHeight: h, format: 'RGBA'};
 
     let frame = new VideoFrame(dataList[index], init);
-    frame_counter++;
     const insert_keyframe = (frame_counter % 10) === 0;
+    frame_counter++;
 
     let t0 = performance.now();
     encoder.encode(frame, {keyFrame: insert_keyframe});
     let t1 = performance.now();
     postMessage("encode time : " + (t1 - t0));
     frame.close();
-    if (frame_counter === frame_number) {
-        await encoder.flush();
-        encoder.close();
-        postMessage("done");
-    }
 }
 
 function prepareData() {
@@ -150,7 +151,6 @@ function prepareData() {
 function initEncoder() {
     const init = {
         output: (chunk) => {
-            console.log("encode chunk");
             const buffer = new Uint8Array(chunk.byteLength);
             chunk.copyTo(buffer);
             let chunkObj = new EncodedVideoChunk({
@@ -159,7 +159,6 @@ function initEncoder() {
                 type: chunk.type,
                 data: buffer,
             });
-
             chunks.push(chunkObj);
         },
         error: (e) => {
@@ -174,7 +173,6 @@ function initEncoder() {
 function initDecoder() {
     const init = {
         output: (frame) => {
-            console.log("decode frame");
         },
         error: (e) => {
             postMessage(e.message);
